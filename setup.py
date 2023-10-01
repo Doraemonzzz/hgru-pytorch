@@ -17,6 +17,7 @@ arch_flags = get_gpu_arch_flags()
 setup(
     name="hgru",
     version="0.0.0",
+    url="https://github.com/Doraemonzzz/hgru-pytorch",
     packages=find_packages(),
     ext_modules=[
         CUDAExtension(
