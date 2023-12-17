@@ -44,6 +44,18 @@ setup(
                 + arch_flags,
             },
         ),
+        CUDAExtension(
+            "luru_cuda",
+            sources=[
+                "hgru/luru_cuda/luru_cuda_kernel.cu",
+                "hgru/luru_cuda/luru_cuda.cpp",
+            ],
+            extra_compile_args={
+                "cxx": ["-O2", "-std=c++14", "-D_GLIBCXX_USE_CXX11_ABI=0"],
+                "nvcc": ["-O2", "-std=c++14", "-D_GLIBCXX_USE_CXX11_ABI=0"]
+                + arch_flags,
+            },
+        ),
     ],
     cmdclass={
         "build_ext": BuildExtension.with_options(use_ninja=False),
