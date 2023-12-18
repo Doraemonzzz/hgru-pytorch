@@ -25,10 +25,8 @@ class LuruV4(nn.Module):
 
         self.input_proj = nn.Linear(embed_dim, 2 * embed_dim, bias=bias)
         
-        # theta = 10000 ** (-1 / embed_dim * torch.arange(embed_dim))
-        theta = torch.zeros(embed_dim)
+        theta = 10000 ** (-1 / embed_dim * torch.arange(embed_dim))
         self.register_buffer('theta', theta)
-        self.index = torch.empty(0)
         
         self.gate = nn.Sequential(
             nn.Linear(embed_dim, gate_dim, bias=bias),
@@ -46,19 +44,31 @@ class LuruV4(nn.Module):
         input_state = self.act(self.input_proj(x))
         gate = F.sigmoid(self.gate(x))
         output_state = self.scan(input_state, self.theta)
+        
         output_state = self.norm(output_state * gate)
 
         output = self.out_proj(output_state)
 
         return output
     
-    def rotate(self, x):
+    def rotate1(self, x):
         x_ = torch.view_as_complex(x.float().reshape(*x.shape[:-1], -1, 2))
         theta_ = torch.polar(torch.ones_like(self.theta).to(torch.float32), self.theta.to(torch.float32))
         x_out = torch.view_as_real(x_ * theta_).flatten(2)
         x_out = x_out.type_as(x)
         
         return x_out
+    
+    def rotate2(self, x):
+        dtype = x.dtype
+        theta = torch.stack([self.theta, self.theta], dim=-1).reshape(1, 1, -1).to(torch.float32)
+        cos = torch.cos(theta)
+        sin = torch.sin(theta)
+        # (-q1, -q3), (q0, q2) -> (-q1, q0, -q3, q2)
+        x_half = torch.stack([-x[..., 1::2], x[..., ::2]], dim=-1).reshape_as(x).to(torch.float32)
+        x_out = cos * x.to(torch.float32) + sin * x_half
+        
+        return x_out.to(dtype)
 
     def forward_naive(self, x, **kwargs):
         # x: n, b, d
@@ -67,12 +77,13 @@ class LuruV4(nn.Module):
         output_state = []
         n, b, d = input_state.shape
         memory = torch.zeros(1, b, d).to(x)
-        for i in range(n):
-            memory_next = self.rotate(memory) + input_state[i:i+1]
-            output_state.append(memory_next)
-            memory = memory_next
-        output_state = torch.cat(output_state, dim=0)
 
+        for i in range(n):
+            memory_next = self.rotate2(memory.float()) + input_state[i:i+1].float()
+            output_state.append(memory_next.to(x.dtype))
+            memory = memory_next
+        output_state = torch.cat(output_state, dim=0).to(x.dtype)
+        
         output_state = self.norm(output_state * gate)
 
         output = self.out_proj(output_state)

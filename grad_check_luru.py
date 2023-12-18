@@ -17,6 +17,11 @@ x = torch.randn(n, b, d).to(dtype).cuda().requires_grad_()
 y1 = model(x)
 y2 = model.forward_naive(x)
 
+print(y1[0, 0, :5])
+print(y2[0, 0, :5])
+print(y1[-1, 0, :5])
+print(y2[-1, 0, :5])
+
 
 print(torch.norm(y1 - y2))
 

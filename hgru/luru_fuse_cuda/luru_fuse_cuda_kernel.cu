@@ -31,17 +31,25 @@ __global__ void luru_fuse_forward_kernel(
     if ((idy < b) && (idz < e)) {
         scalar_t hidden_state1 = 0;
         scalar_t hidden_state2 = 0;
+        scalar_t hidden_state1_next, hidden_state2_next;
+        float theta_ = float(theta[idz]);
+        float cos_ = cos(theta_);
+        float sin_ = sin(theta_);
+
         for (int64_t idx = 0; idx < n; ++idx) {
             int64_t index1 = idx * b * d + idy * d + 2 * idz;
             int64_t index2 = index1 + 1;
-            scalar_t theta_ = theta[idz] * idx;
-            scalar_t cos_ = cos(theta_);
-            scalar_t sin_ = sin(theta_);
-            
-            hidden_state1 += float(cos_) * float(x[index1]) - float(sin_) * float(x[index2]);
-            hidden_state2 += float(sin_) * float(x[index1]) + float(cos_) * float(x[index2]);
-            output[index1] = hidden_state1;
-            output[index2] = hidden_state2;
+            scalar_t x1 = x[index1];
+            scalar_t x2 = x[index2];
+
+            hidden_state1_next = float(cos_) * float(hidden_state1) - float(sin_) * float(hidden_state2) + float(x1);
+            hidden_state2_next = float(sin_) * float(hidden_state1) + float(cos_) * float(hidden_state2) + float(x2);
+
+            output[index1] = hidden_state1_next;
+            output[index2] = hidden_state2_next;
+
+            hidden_state1 = hidden_state1_next;
+            hidden_state2 = hidden_state2_next;
         }
     }
 }
@@ -61,17 +69,25 @@ __global__ void luru_fuse_backward_kernel(
     if ((idy < b) && (idz < e)) {
         scalar_t grad_hidden_state1 = 0;
         scalar_t grad_hidden_state2 = 0;
+        scalar_t grad_hidden_state1_next, grad_hidden_state2_next;
+        float theta_ = float(theta[idz]);
+        float cos_ = cos(theta_);
+        float sin_ = sin(theta_);
+
         for (int64_t idx = n - 1; idx >= 0; --idx) {
             int64_t index1 = idx * b * d + idy * d + 2 * idz;
             int64_t index2 = index1 + 1;
-            scalar_t theta_ = theta[idz] * idx;
-            scalar_t cos_ = cos(theta_);
-            scalar_t sin_ = sin(theta_);
+            scalar_t g1 = grad_output[index1];
+            scalar_t g2 = grad_output[index2];
 
-            grad_hidden_state1 += float(cos_) * float(grad_output[index1]) - float(sin_) * float(grad_output[index2]);
-            grad_hidden_state2 += float(sin_) * float(grad_output[index1]) + float(cos_) * float(grad_output[index2]);
-            grad_x[index1] = grad_hidden_state1;
-            grad_x[index2] = grad_hidden_state2;
+            grad_hidden_state1_next = float(cos_) * float(grad_hidden_state1) + float(sin_) * float(grad_hidden_state2) + float(g1);
+            grad_hidden_state2_next = -float(sin_) * float(grad_hidden_state1) + float(cos_) * float(grad_hidden_state2) + float(g2);
+
+            grad_x[index1] = grad_hidden_state1_next;
+            grad_x[index2] = grad_hidden_state2_next;
+
+            grad_hidden_state1 = grad_hidden_state1_next;
+            grad_hidden_state2 = grad_hidden_state2_next;
         }
     }
 }
