@@ -7,3 +7,6 @@ from .hgrureal2d import *
 from .hgru1d_v2 import *
 from .hgru1d_v3 import *
 from .luru import *
+from .luru_v2 import *
+from .luru_v3 import *
+from .luru_v4 import *

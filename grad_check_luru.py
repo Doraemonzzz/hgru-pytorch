@@ -1,5 +1,5 @@
 import torch
-from hgru import Luru
+from hgru import Luru, LuruV4
 
 n = 512
 b = 1
@@ -9,7 +9,8 @@ dtype = torch.bfloat16
 # dtype = torch.float16
 # dtype = torch.float32
 
-model = Luru(d).cuda().to(dtype)
+# model = Luru(d).cuda().to(dtype)
+model = LuruV4(d).cuda().to(dtype)
 print(model)
 
 x = torch.randn(n, b, d).to(dtype).cuda().requires_grad_()

@@ -1,0 +1,1 @@
+from .luru_fuse_function import LuruFuseFunction
