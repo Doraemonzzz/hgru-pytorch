@@ -76,15 +76,15 @@ class LuruV4(nn.Module):
         gate = F.sigmoid(self.gate(x))
         output_state = []
         n, b, d = input_state.shape
-        memory = torch.zeros(1, b, d).to(x)
+        memory = torch.zeros(1, b, d).to(x).float()
 
         for i in range(n):
-            memory_next = self.rotate2(memory.float()) + input_state[i:i+1].float()
+            memory_next = self.rotate1(memory.float()) + input_state[i:i+1].float()
             output_state.append(memory_next.to(x.dtype))
             memory = memory_next
-        output_state = torch.cat(output_state, dim=0).to(x.dtype)
+        output_state = torch.cat(output_state, dim=0)
         
-        output_state = self.norm(output_state * gate)
+        output_state = self.norm((output_state * gate.float()).to(x.dtype))
 
         output = self.out_proj(output_state)
 
