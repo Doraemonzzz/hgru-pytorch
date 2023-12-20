@@ -4,6 +4,18 @@
 #include <cuda_runtime.h>
 #include <vector>
 
+#define AT_DISPATCH_CASE_FLOATING_TYPES_AND_HALF_AND_BF16(...)   \
+  AT_DISPATCH_CASE(at::ScalarType::Double, __VA_ARGS__) \
+  AT_DISPATCH_CASE(at::ScalarType::Float, __VA_ARGS__)  \
+  AT_DISPATCH_CASE(at::ScalarType::Half, __VA_ARGS__) \
+  AT_DISPATCH_CASE(at::ScalarType::BFloat16, __VA_ARGS__) \
+
+#define AT_DISPATCH_FLOATING_TYPES_AND_HALF_AND_BF16(TYPE, NAME, ...) \
+  AT_DISPATCH_SWITCH(                                        \
+      TYPE, NAME, AT_DISPATCH_CASE_FLOATING_TYPES_AND_HALF_AND_BF16(__VA_ARGS__))
+
+
+
 // CUDA kernel for forward pass
 template <typename scalar_t>
 __global__ void hgru_real_forward_kernel(
@@ -17,6 +29,7 @@ __global__ void hgru_real_forward_kernel(
 
     if (idy < b && idz < d) {
         scalar_t hidden_state = 0;
+        #pragma unroll
         for (int64_t idx = 0; idx < n; ++idx) {
             int64_t index = idx * b * d + idy * d + idz;
             hidden_state = lambda[index] * hidden_state + x[index];
@@ -38,12 +51,13 @@ __global__ void hgru_real_backward_kernel(
 
     if (idy < b && idz < d) {
         scalar_t grad_hidden_state = 0;
+        #pragma unroll
         for (int64_t idx = n - 1; idx >= 0; --idx) {
             int64_t index = idx * b * d + idy * d + idz;
             int64_t j = ((idx == n - 1) ? 0 : index + b * d);
             grad_hidden_state = grad_output[index] + lambda[j] * grad_hidden_state;
 
-            grad_lambda[index] = grad_hidden_state * ((idx == 0) ? 0 : hidden_states[index - b * d]);
+            grad_lambda[index] = grad_hidden_state * ((idx == 0) ? scalar_t(0) : hidden_states[index - b * d]);
             grad_x[index] = grad_hidden_state;
         }
     }
@@ -59,7 +73,7 @@ torch::Tensor hgru_real_forward_cuda(
     dim3 threads(128, 8);
     dim3 blocks((d + threads.x - 1) / threads.x, (b + threads.y - 1) / threads.y);
 
-    AT_DISPATCH_FLOATING_TYPES(x.scalar_type(), "hgru_real_forward_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF_AND_BF16(x.scalar_type(), "hgru_real_forward_cuda", ([&] {
         hgru_real_forward_kernel<scalar_t><<<blocks, threads>>>(
             x.data_ptr<scalar_t>(), lambda.data_ptr<scalar_t>(),
             output.data_ptr<scalar_t>(), n, b, d);
@@ -80,7 +94,7 @@ std::vector<torch::Tensor> hgru_real_backward_cuda(
     dim3 threads(128, 8);
     dim3 blocks((d + threads.x - 1) / threads.x, (b + threads.y - 1) / threads.y);
 
-    AT_DISPATCH_FLOATING_TYPES(grad_output.scalar_type(), "hgru_real_backward_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF_AND_BF16(grad_output.scalar_type(), "hgru_real_backward_cuda", ([&] {
         hgru_real_backward_kernel<scalar_t><<<blocks, threads>>>(
             x.data_ptr<scalar_t>(), lambda.data_ptr<scalar_t>(), hidden_states.data_ptr<scalar_t>(), grad_output.data_ptr<scalar_t>(),
             grad_x.data_ptr<scalar_t>(), grad_lambda.data_ptr<scalar_t>(), n, b, d);

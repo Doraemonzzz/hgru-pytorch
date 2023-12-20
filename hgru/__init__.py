@@ -10,3 +10,8 @@ from .luru import *
 from .luru_v2 import *
 from .luru_v3 import *
 from .luru_v4 import *
+from .luru_v5 import *
+from .shgru_v1 import *
+from .shgru_v2 import *
+from .shgru_v3 import *
+from .shgru_v4 import *
