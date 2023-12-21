@@ -15,3 +15,7 @@ from .shgru_v1 import *
 from .shgru_v2 import *
 from .shgru_v3 import *
 from .shgru_v4 import *
+from .shgru_v5 import *
+from .shgru_v6 import *
+from .shgru_v7 import *
+from .shgru_v8 import *

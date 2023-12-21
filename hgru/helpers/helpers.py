@@ -95,3 +95,18 @@ def get_activation_fn(activation):
         return F.silu
     else:
         return lambda x: x
+
+def print_module(module):
+    named_modules = set()
+    for p in module.named_modules():
+        named_modules.update([p[0]] )    
+    named_modules = list(named_modules)
+
+    string_repr = ''
+    for p in module.named_parameters():
+        name = p[0].split('.')[0]
+        if name not in named_modules:
+            string_repr = string_repr + '('+ name +'): ' \
+                +'Tensor(' + str(tuple(p[1].shape))+ ', requires_grad='+ str(p[1].requires_grad) +')\n' 
+    
+    return string_repr.rstrip("\n")
