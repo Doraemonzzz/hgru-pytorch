@@ -19,3 +19,4 @@ from .shgru_v5 import *
 from .shgru_v6 import *
 from .shgru_v7 import *
 from .shgru_v8 import *
+from .shgru_v9 import *
