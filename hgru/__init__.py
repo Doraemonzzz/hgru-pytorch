@@ -20,3 +20,10 @@ from .shgru_v6 import *
 from .shgru_v7 import *
 from .shgru_v8 import *
 from .shgru_v9 import *
+from .shgru_v10 import *
+from .shgru_v11 import *
+from .shgru_v12 import *
+from .shgru_v13 import *
+from .shgru_v14 import *
+from .shgru_v15 import *
+from .shgru_v16 import *
