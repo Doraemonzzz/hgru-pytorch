@@ -30,3 +30,4 @@ from .shgru_v16 import *
 from .shgru_v17 import *
 from .shgru_v18 import *
 from .shgru_v19_low_rank import *
+from .shgru_v20_group_linear_better import *
