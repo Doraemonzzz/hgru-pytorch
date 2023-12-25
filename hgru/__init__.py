@@ -28,3 +28,5 @@ from .shgru_v14 import *
 from .shgru_v15 import *
 from .shgru_v16 import *
 from .shgru_v17 import *
+from .shgru_v18 import *
+from .shgru_v19_low_rank import *
