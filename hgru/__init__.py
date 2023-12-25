@@ -31,3 +31,4 @@ from .shgru_v17 import *
 from .shgru_v18 import *
 from .shgru_v19_low_rank import *
 from .shgru_v20_group_linear_better import *
+from .shgru_v21_group_linear_better_data_dependent import *
