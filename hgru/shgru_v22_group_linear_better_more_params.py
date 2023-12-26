@@ -47,7 +47,7 @@ class SHgruV22(nn.Module):
         
         # group linear: n, b, d -> n, b, kd
         input = self.in_glt(input)
-        forget_gate = self.forget_glt(output_gate)
+        forget_gate = self.forget_glt(forget_gate)
         
         # mix
         input = self.act(input)
