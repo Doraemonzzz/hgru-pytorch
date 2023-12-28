@@ -43,14 +43,16 @@ class SHgruV31(nn.Module):
         forget_gate = F.sigmoid(forget_gate)
         
         # reshape
-        input, output_gate, forget_gate, lower_bound = map(
+        input, output_gate, forget_gate = map(
             lambda x: rearrange(x, "... (k d) -> ... k d", k=self.expand_ratio),
-            [input, output_gate, forget_gate, lower_bound],
+            [input, output_gate, forget_gate],
         )
+        lower_bound = rearrange(lower_bound, '(k d g) -> k d g', k=self.expand_ratio, g=self.expand_ratio)
         
         # mix
-        log_lambda = torch.einsum('... k d, ... g d -> ... k d g', lower_bound, forget_gate)
+        log_lambda = torch.einsum('... k d g, ... g d -> ... k d g', lower_bound, forget_gate)
         lambda_ = torch.exp(log_lambda)
+        print(lambda_.shape, input.shape)
         input = torch.einsum('... k d g, ... g d -> ... k d g', 1 - lambda_, input)
         # reshape
         input, lambda_ = map(
