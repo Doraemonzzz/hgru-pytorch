@@ -8,7 +8,7 @@ from .helpers import get_activation_fn, print_params, print_module
 
 from .hgru_real_cuda import HgruRealFunction
 
-class SHgruV31(nn.Module):
+class SHgruV32(nn.Module):
     def __init__(
         self,
         embed_dim,
@@ -24,7 +24,11 @@ class SHgruV31(nn.Module):
         # print params
         print_params(**params)
 
-        self.in_proj = nn.Linear(embed_dim, 3 * embed_dim, bias=bias)
+        self.in_proj = nn.Linear(embed_dim, 2 * embed_dim, bias=bias)
+        self.forget_gate_proj = nn.Sequential(
+            nn.Linear(embed_dim, gate_dim, bias=bias),
+            nn.Linear(gate_dim, embed_dim, bias=bias),
+        )
         self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         self.expand_ratio = expand_ratio
         self.norm = nn.LayerNorm(embed_dim)
@@ -37,23 +41,23 @@ class SHgruV31(nn.Module):
         # h = lambda * h + (1 - lambda) * input
         n, b, d = x.shape
         feature = self.in_proj(x)
-        input, output_gate, forget_gate = feature.chunk(3, dim=-1)
+        input, output_gate = feature.chunk(2, dim=-1)
+        forget_gate = self.forget_gate_proj(x)
         input = self.act(input)
         output_gate = F.sigmoid(output_gate)
         forget_gate = F.sigmoid(forget_gate)
         
         # reshape
-        input, output_gate, forget_gate = map(
+        input, output_gate, forget_gate, lower_bound = map(
             lambda x: rearrange(x, "... (k d) -> ... k d", k=self.expand_ratio),
-            [input, output_gate, forget_gate],
+            [input, output_gate, forget_gate, lower_bound],
         )
-        lower_bound = rearrange(lower_bound, '(k d g) -> k d g', k=self.expand_ratio, g=self.expand_ratio)
         
         # mix
-        log_lambda = torch.einsum('... k d g, ... g d -> ... k d g', lower_bound, forget_gate)
-        lambda_ = torch.exp(log_lambda)
-
-        input = torch.einsum('... k d g, ... g d -> ... k d g', 1 - lambda_, input)
+        lambda_ = torch.exp(lower_bound * forget_gate)
+        input = torch.einsum('... k d, ... g d -> ... k d g', 1 - lambda_, input)
+        lambda_ = repeat(lambda_, '... k d -> ... k d g', g=self.expand_ratio)
+        
         # reshape
         input, lambda_ = map(
             lambda x: rearrange(x, '... k d g -> ... (k d g)'),

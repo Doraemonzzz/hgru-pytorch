@@ -8,7 +8,7 @@ from .helpers import get_activation_fn, print_params, print_module
 
 from .hgru_real_cuda import HgruRealFunction
 
-class SHgruV31(nn.Module):
+class SHgruV33(nn.Module):
     def __init__(
         self,
         embed_dim,
@@ -39,21 +39,20 @@ class SHgruV31(nn.Module):
         feature = self.in_proj(x)
         input, output_gate, forget_gate = feature.chunk(3, dim=-1)
         input = self.act(input)
-        output_gate = F.sigmoid(output_gate)
+        output_gate = self.act(output_gate)
         forget_gate = F.sigmoid(forget_gate)
         
         # reshape
-        input, output_gate, forget_gate = map(
+        input, output_gate, forget_gate, lower_bound = map(
             lambda x: rearrange(x, "... (k d) -> ... k d", k=self.expand_ratio),
-            [input, output_gate, forget_gate],
+            [input, output_gate, forget_gate, lower_bound],
         )
-        lower_bound = rearrange(lower_bound, '(k d g) -> k d g', k=self.expand_ratio, g=self.expand_ratio)
         
         # mix
-        log_lambda = torch.einsum('... k d g, ... g d -> ... k d g', lower_bound, forget_gate)
-        lambda_ = torch.exp(log_lambda)
+        lambda_ = torch.exp(lower_bound * forget_gate)
+        input = torch.einsum('... k d, ... g d -> ... k d g', 1 - lambda_, input)
+        lambda_ = repeat(lambda_, '... k d -> ... k d g', g=self.expand_ratio)
 
-        input = torch.einsum('... k d g, ... g d -> ... k d g', 1 - lambda_, input)
         # reshape
         input, lambda_ = map(
             lambda x: rearrange(x, '... k d g -> ... (k d g)'),
