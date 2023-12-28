@@ -36,3 +36,8 @@ from .shgru_v22_group_linear_better_more_params import *
 from .shgru_v23_low_rank_better import *
 from .shgru_v24_low_rank_output_low_rank import *
 from .shgru_v25_out_product import *
+from .shgru_v26_out_product_better import *
+from .shgru_v27_out_product_decay import *
+from .shgru_v28_out_product_no_head import *
+from .shgru_v29_simple_expand import *
+from .shgru_v30_out_product_decay_gate_less_params import *
