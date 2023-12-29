@@ -44,3 +44,5 @@ from .shgru_v30_out_product_decay_gate_less_params import *
 from .shgru_v31_out_product_decay_expand import *
 from .shgru_v32_out_product_decay_forget_gate_less_params import *
 from .shgru_v33_out_product_decay_silu import *
+from .shgru_v34_out_product_output_gate_expand import *
+from .shgru_v35_out_product_decay_expand_down import *
