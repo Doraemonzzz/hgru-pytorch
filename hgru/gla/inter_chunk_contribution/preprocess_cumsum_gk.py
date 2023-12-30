@@ -170,7 +170,7 @@ def _bwd_preprocess_cumsum_gk(
         dgk += grad_gk_last
     
         gk = tl.load(GK_ptr).to(tl.float32) 
-        dgk = tl.where(gk_logit >= clamp_min, (dgk), 0.)
+        dgk = tl.where(gk >= clamp_min, (dgk), 0.)
 
         tl.store(DGK_ptr, dgk.to(DGK_ptr.dtype.element_ty))
         DGK_ptr -= D_MODEL_K

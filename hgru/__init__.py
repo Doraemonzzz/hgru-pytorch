@@ -47,3 +47,4 @@ from .shgru_v33_out_product_decay_silu import *
 from .shgru_v34_out_product_output_gate_expand import *
 from .shgru_v35_out_product_decay_expand_down import *
 from .shgru_v36_out_product_decay_standard import *
+from .shgru_v36_out_product_decay_standard_triton import *

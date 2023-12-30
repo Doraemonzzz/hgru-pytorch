@@ -5,7 +5,7 @@ from .chunk_scan_triton_only_gk import Chunk_memory_update_only_gk
 from .chunk_scan_triton_only_gv import Chunk_memory_update_only_gv
 from .chunk_scan_triton_no_decay import Chunk_memory_update_no_decay
 
-def inter_chunk_onc(query, key, value, gk, gv, clam_min=-3):
+def inter_chunk_onc(query, key, value, gk, gv, normalizer_gk=16, clam_min=-3):
     
     if gk is not None:
         g_key_cumsum, reduce_key,  q_exp,  g_key_last_exp = PreprocessCumSum_GK.apply(query, key, gk, normalizer_gk, clam_min)

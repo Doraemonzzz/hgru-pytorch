@@ -108,10 +108,10 @@ class Chunk_memory_update_only_gk(torch.autograd.Function):
 
         B, H, N, D_k, D_v = to_add.shape 
         output = torch.empty_like(to_add)        
-        BLOCK_MODEL = 32
-    
-        assert D_k % 32 == 0
-        assert D_v % 32 == 0
+        BLOCK_MODEL = 16
+
+        assert D_k % BLOCK_MODEL == 0
+        assert D_v % BLOCK_MODEL == 0
         assert D_k == decay_key_last.shape[-1]
         # assert D_v == to_add.shape[-1]
 
