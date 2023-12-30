@@ -11,7 +11,6 @@ def get_gpu_arch_flags():
         print(f"Error while detecting GPU architecture: {e}")
         return []
 
-
 arch_flags = get_gpu_arch_flags()
 
 setup(
