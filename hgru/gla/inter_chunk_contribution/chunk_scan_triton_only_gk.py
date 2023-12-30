@@ -144,7 +144,8 @@ class Chunk_memory_update_only_gk(torch.autograd.Function):
 
         num_block = N
         
-        BLOCK_MODEL = 32 
+        # BLOCK_MODEL = 32 
+        BLOCK_MODEL = 16
 
         grid = (B*H, D_k//BLOCK_MODEL, D_v//BLOCK_MODEL)
 

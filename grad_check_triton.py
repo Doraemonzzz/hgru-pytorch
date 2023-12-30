@@ -7,7 +7,7 @@ d = 64
 
 dtype = torch.bfloat16
 # dtype = torch.float16
-dtype = torch.float32
+# dtype = torch.float32
 
 model = SHgruV36_Triton(d, expand_ratio=16).cuda().to(dtype)
 lower_bound = -torch.rand(d).cuda().to(dtype)

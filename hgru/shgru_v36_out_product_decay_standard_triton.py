@@ -54,7 +54,7 @@ class SHgruV36_Triton(nn.Module):
         )
         # # 限制一下最小的log_decay, 保证数值稳定。
         # G_K = (lower_bound[None, None, :, :] * F).clam_min(-3)
-        log_lambda_ = lower_bound * F_
+        log_lambda_ = (lower_bound * F_)#.clamp_min(-3)
         lambda_ = torch.exp(log_lambda_)
         
         K = 1 - lambda_
