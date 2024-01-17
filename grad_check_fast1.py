@@ -1,15 +1,15 @@
 import torch
-from hgru import SHgruV36_Triton
+from hgru import SHgruV46
 
-b = 1
+b = 2
 n = 512
 d = 64
 
 dtype = torch.bfloat16
 # dtype = torch.float16
-dtype = torch.float32
+# dtype = torch.float32
 
-model = SHgruV36_Triton(d, expand_ratio=16).cuda().to(dtype)
+model = SHgruV46(d, expand_ratio=16).cuda().to(dtype)
 lower_bound = -torch.rand(d).cuda().to(dtype)
 
 x = torch.randn(n, b, d).to(dtype).cuda().requires_grad_()

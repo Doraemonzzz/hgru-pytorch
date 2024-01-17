@@ -4,14 +4,14 @@ import torch.nn.functional as F
 from einops import rearrange, repeat
 from torch import Tensor, nn
 
-from .helpers import get_activation_fn, print_params, print_module
+from .helpers import get_activation_fn, print_params, print_module, get_norm_fn
 
 from .hgru_real_cuda import HgruRealFunction
 
 from .gla.intra_chunk_contribution.fn import intra_chunk_onc
 from .gla.inter_chunk_contribution.fn import inter_chunk_onc
 
-class SHgruV36_Triton(nn.Module):
+class SHgruV39(nn.Module):
     def __init__(
         self,
         embed_dim,
@@ -30,7 +30,6 @@ class SHgruV36_Triton(nn.Module):
         self.in_proj = nn.Linear(embed_dim, 3 * embed_dim, bias=bias)
         self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         self.expand_ratio = expand_ratio
-        self.norm = nn.LayerNorm(embed_dim)
         self.act = get_activation_fn(act_fun)
         self.causal = causal
 
@@ -66,11 +65,9 @@ class SHgruV36_Triton(nn.Module):
         G_V = None
         G_K, G_V, o1 = inter_chunk_onc(Q, K, V, G_K, G_V)        
         o2 = intra_chunk_onc(Q, K, V, G_K, G_V)
-        o = (o1 + o2)        
+        o = (o1 + o2)    
+ 
         o = rearrange(o, "b h n c d -> (n c) b (h d)")
-        
-        o = self.norm(o)
-
 
         # out proj
         output = self.out_proj(o)
@@ -91,7 +88,7 @@ class SHgruV36_Triton(nn.Module):
             [input, output_gate, forget_gate, lower_bound],
         )
         
-        # mix
+        # 
         lambda_ = torch.exp(lower_bound * forget_gate)
 
         input = torch.einsum('... h d, ... h e -> ... h d e', 1 - lambda_, input)
@@ -108,9 +105,6 @@ class SHgruV36_Triton(nn.Module):
         output_state = rearrange(output_state, '... (h d e) -> ... h d e', d=self.expand_ratio, e=self.expand_ratio)
         output_state = torch.einsum('... h d e, ... h d -> ... h e', output_state, output_gate)
         output_state = rearrange(output_state, '... h e -> ... (h e)')
-        
-        # output gate
-        output_state = self.norm(output_state)
 
         # out proj
         output = self.out_proj(output_state)

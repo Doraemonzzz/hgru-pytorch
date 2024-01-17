@@ -48,3 +48,13 @@ from .shgru_v34_out_product_output_gate_expand import *
 from .shgru_v35_out_product_decay_expand_down import *
 from .shgru_v36_out_product_decay_standard import *
 from .shgru_v36_out_product_decay_standard_triton import *
+from .shgru_v37_out_product_decay_out_product import *
+from .shgru_v38_out_product_decay_standard_norm import *
+from .shgru_v39_out_product_decay_standard_no_norm import *
+from .shgru_v40_out_product_decay_standard_no_norm_pure import *
+from .shgru_v41_out_product_decay_standard_triton_forget_less_params import *
+from .shgru_v42_out_product_decay_standard_triton_all_less_params import *
+from .shgru_v43_out_product_decay_standard_triton_final import *
+from .shgru_v44_out_product_decay_standard_triton_final_origin_lower_bound import *
+from .shgru_v45_out_product_decay_standard_triton_final_less_head import *
+# from .shgru_v46_out_product_decay_standard_triton_final_fast import *

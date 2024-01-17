@@ -7,6 +7,8 @@ import torch.distributed as dist
 import torch.nn.functional as F
 from torch import nn
 
+from .srmsnorm_triton import SimpleRMSNorm
+
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -110,3 +112,9 @@ def print_module(module):
                 +'Tensor(' + str(tuple(p[1].shape))+ ', requires_grad='+ str(p[1].requires_grad) +')\n' 
     
     return string_repr.rstrip("\n")
+
+def get_norm_fn(norm_type):
+    if norm_type == "simplermsnorm":
+        return SimpleRMSNorm
+    else:
+        return nn.LayerNorm
