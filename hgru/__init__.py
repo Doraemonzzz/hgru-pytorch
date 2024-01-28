@@ -59,3 +59,4 @@ from .shgru_v44_out_product_decay_standard_triton_final_origin_lower_bound impor
 from .shgru_v45_out_product_decay_standard_triton_final_less_head import *
 # from .shgru_v46_out_product_decay_standard_triton_final_fast import *
 from .shgru_v48_no_less_params import *
+from .shgru_v49_out_product_decay_standard_triton_final_less_head_cuda import *
