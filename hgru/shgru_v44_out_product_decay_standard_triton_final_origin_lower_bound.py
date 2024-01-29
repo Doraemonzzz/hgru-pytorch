@@ -41,6 +41,7 @@ class SHgruV44(nn.Module):
         
         if self.expand_ratio < 16:
             self.forward = self.forward_lesshead
+            self.scan = HgruRealFunction.apply
 
     def forward(self, x, lower_bound=0):
         ## x: n b d
