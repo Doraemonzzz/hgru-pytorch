@@ -60,4 +60,5 @@ from .shgru_v45_out_product_decay_standard_triton_final_less_head import *
 # from .shgru_v46_out_product_decay_standard_triton_final_fast import *
 from .shgru_v48_no_less_params import *
 from .shgru_v49_out_product_decay_standard_triton_final_less_head_cuda import *
-from .shgru_v50_2d import SHgruV50_2d
+from .shgru_v50_2d import *
+from .shgru_v51_1d_non_causal import *
