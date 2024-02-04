@@ -66,6 +66,7 @@ class SHgruV50_2d(nn.Module):
         # mix
         lambda_ = lower_bound + (1 - lower_bound) * forget_gate
         input = torch.einsum('... h d, ... h e -> ... h d e', 1 - lambda_, input)
+
         lambda_ = repeat(lambda_, '... h d -> ... h d e', e=self.expand_ratio)
 
         # reshape
