@@ -74,6 +74,7 @@ class SHgruV50_2d(nn.Module):
             lambda x: rearrange(x, '... h d e -> ... (h d e)'),
             [input, lambda_]
         )
+        lambda_ = lambda_.to(input.dtype)
         
         # mix
         input_h, lambda_h = map(
