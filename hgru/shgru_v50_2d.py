@@ -21,6 +21,7 @@ class SHgruV50_2d(nn.Module):
         use_norm=True,
         bias=True,
         norm_type="layernorm",
+        **kwargs,
     ):
         super().__init__()
         # get local varables
@@ -62,7 +63,7 @@ class SHgruV50_2d(nn.Module):
             lambda x: rearrange(x, "... (h d) -> ... h d", d=self.expand_ratio),
             [input, output_gate, forget_gate, lower_bound],
         )
-        
+
         # mix
         lambda_ = lower_bound + (1 - lower_bound) * forget_gate
         input = torch.einsum('... h d, ... h e -> ... h d e', 1 - lambda_, input)
