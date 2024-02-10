@@ -11,7 +11,7 @@ from .hgru_real_cuda import HgruRealFunction
 from .gla.intra_chunk_contribution.fn import intra_chunk_onc
 from .gla.inter_chunk_contribution.fn import inter_chunk_onc
 
-class SHgruV50_2d_expand(nn.Module):
+class SHgruV50_2d_no_share(nn.Module):
     def __init__(
         self,
         embed_dim,
@@ -30,8 +30,8 @@ class SHgruV50_2d_expand(nn.Module):
         print_params(**params)
 
         self.expand_ratio = expand_ratio
-        self.in_proj = nn.Linear(embed_dim, 6 * embed_dim, bias=bias)
-        self.out_proj = nn.Linear(2 * embed_dim, embed_dim, bias=bias)
+        self.in_proj = nn.Linear(embed_dim, 3 * embed_dim, bias=bias)
+        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         self.act = get_activation_fn(act_fun)
         self.out_act = get_activation_fn(uv_act_fun)
         self.use_norm = use_norm
@@ -57,39 +57,50 @@ class SHgruV50_2d_expand(nn.Module):
         input = self.act(input)
         output_gate = self.out_act(output_gate)
         forget_gate = F.sigmoid(forget_gate)
+        
+        lower_bound_forward, lower_bound_reverse = lower_bound.chunk(2, dim=-1)
 
         # reshape
-        input, output_gate, forget_gate, lower_bound = map(
+        input, output_gate, forget_gate, lower_bound_forward, lower_bound_reverse = map(
             lambda x: rearrange(x, "... (h d) -> ... h d", d=self.expand_ratio),
-            [input, output_gate, forget_gate, lower_bound],
+            [input, output_gate, forget_gate, lower_bound_forward, lower_bound_reverse],
         )
 
-        # mix
-        lambda_ = lower_bound + (1 - lower_bound) * forget_gate
-        input = torch.einsum('... h d, ... h e -> ... h d e', 1 - lambda_, input)
-
-        lambda_ = repeat(lambda_, '... h d -> ... h d e', e=self.expand_ratio)
-
+        # mix forward
+        lambda_forward = lower_bound_forward + (1 - lower_bound_forward) * forget_gate
+        input_forward = torch.einsum('... h d, ... h e -> ... h d e', 1 - lambda_forward, input)
+        lambda_forward = repeat(lambda_forward, '... h d -> ... h d e', e=self.expand_ratio)
         # reshape
-        input, lambda_ = map(
+        input_forward, lambda_forward = map(
             lambda x: rearrange(x, '... h d e -> ... (h d e)'),
-            [input, lambda_]
+            [input_forward, lambda_forward]
         )
-        lambda_ = lambda_.to(input.dtype)
+        lambda_forward = lambda_forward.to(input.dtype)
+        
+        # mix reverse
+        lambda_reverse = lower_bound_reverse + (1 - lower_bound_reverse) * forget_gate
+        input_reverse = torch.einsum('... h d, ... h e -> ... h d e', 1 - lambda_reverse, input)
+        lambda_reverse = repeat(lambda_reverse, '... h d -> ... h d e', e=self.expand_ratio)
+        # reshape
+        input_reverse, lambda_reverse = map(
+            lambda x: rearrange(x, '... h d e -> ... (h d e)'),
+            [input_reverse, lambda_reverse]
+        )
+        lambda_reverse = lambda_reverse.to(input.dtype)
         
         # mix
-        input_h, lambda_h = map(
+        input_h_forward, lambda_h_forward, input_h_reverse, lambda_h_reverse = map(
             lambda x: rearrange(x, "h w b d -> h (w b) d"),
-            [input, lambda_],
+            [input_forward, lambda_forward, input_reverse, lambda_reverse],
         )
-        input_w, lambda_w = map(
+        input_w_forward, lambda_w_forward, input_w_reverse, lambda_w_reverse = map(
             lambda x: rearrange(x, "h w b d -> w (h b) d"),
-            [input, lambda_],
+            [input_forward, lambda_forward, input_reverse, lambda_reverse],
         )
-        output_state_h_forward = self.scan(input_h, lambda_h)
-        output_state_h_reverse = self.reverse_scan(input_h, lambda_h)
-        output_state_w_forward = self.scan(input_w, lambda_w)
-        output_state_w_reverse = self.reverse_scan(input_w, lambda_w)
+        output_state_h_forward = self.scan(input_h_forward, lambda_h_forward)
+        output_state_h_reverse = self.reverse_scan(input_h_reverse, lambda_h_reverse)
+        output_state_w_forward = self.scan(input_w_forward, lambda_w_forward)
+        output_state_w_reverse = self.reverse_scan(input_w_reverse, lambda_w_reverse)
         output_state = rearrange(output_state_h_forward, "h (w b) d -> h w b d", w=W) \
                      + rearrange(output_state_h_reverse, "h (w b) d -> h w b d", w=W) \
                      + rearrange(output_state_w_forward, "w (h b) d -> h w b d", h=H) \
