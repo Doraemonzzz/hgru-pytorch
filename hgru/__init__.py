@@ -68,3 +68,4 @@ from .shgru_v51_1d_non_causal import *
 from .shgru_v52_2d_triton import *
 from .shgru_v53_1d_bi import *
 from .shgru_v54_1d_triton_bi import *
+from .shgru_v44_out_product_decay_standard_triton_final_origin_lower_bound_fast import *
