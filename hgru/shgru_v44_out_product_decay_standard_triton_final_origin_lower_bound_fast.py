@@ -8,7 +8,7 @@ from .helpers import get_activation_fn, print_params, print_module, get_norm_fn
 
 from .hgru_real_cuda import HgruRealFunction
 
-from fla.ops import fused_recurrent_gla
+from fla.ops import fused_chunk_gla
 
 class SHgruV44Fast(nn.Module):
     def __init__(
@@ -72,8 +72,7 @@ class SHgruV44Fast(nn.Module):
             [V, Q, log_lambda_, K],
         )
 
-        G_V = None
-        o, _ = fused_recurrent_gla(Q, K, V, G_K, G_V, 1)
+        o, _ = fused_chunk_gla(Q, K, V, G_K, 1)
         o = rearrange(o, "b h n d -> n b (h d)")
         
         if self.use_norm:
