@@ -42,10 +42,15 @@ class SHgruV44(nn.Module):
         if self.expand_ratio < 16:
             self.forward = self.forward_lesshead
             self.scan = HgruRealFunction.apply
+        
+        # self.forward = self.forward_lesshead
+        self.scan = HgruRealFunction.apply
 
     def forward(self, x, lower_bound=0):
         ## x: n b d
         n, b, d = x.shape
+        if n % self.chunk_size != 0: # for test
+            return self.forward_lesshead(x, lower_bound)
         feature = self.in_proj(x)
         V, Q, F_ = feature.chunk(3, dim=-1)
         V = self.act(V)
@@ -69,13 +74,13 @@ class SHgruV44(nn.Module):
         K = 1 - lambda_
 
         V, Q, G_K, K = map(
-            lambda x: rearrange(x, "(n c) b h d -> b h n c d", c = self.chunk_size).contiguous(),
+            lambda x: rearrange(x, "(n c) b h d -> b h n c d", c = min(self.chunk_size, n)).contiguous(),
             [V, Q, log_lambda_, K],
         )
 
         G_V = None
-        G_K, G_V, o1 = inter_chunk_onc(Q, K, V, G_K, G_V)        
-        o2 = intra_chunk_onc(Q, K, V, G_K, G_V)
+        G_K, G_V, o1 = inter_chunk_onc(Q, K.to(Q.dtype), V, G_K.to(Q.dtype), G_V)        
+        o2 = intra_chunk_onc(Q, K.to(Q.dtype), V, G_K.to(Q.dtype), G_V)
         o = (o1 + o2)        
         o = rearrange(o, "b h n c d -> (n c) b (h d)")
         
@@ -94,6 +99,8 @@ class SHgruV44(nn.Module):
         input = self.act(input)
         output_gate = self.out_act(output_gate)
         forget_gate = F.sigmoid(forget_gate)
+        if type(lower_bound) == int:
+            lower_bound = torch.zeros_like(x).to(x)
         
         # reshape
         input, output_gate, forget_gate, lower_bound = map(

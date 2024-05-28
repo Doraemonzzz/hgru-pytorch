@@ -10,8 +10,9 @@ class HgruFunction(Function):
     def forward(ctx, x_real, x_imag, lambda_real, lambda_imag):
         x_real = x_real.contiguous()
         x_imag = x_imag.contiguous()
-        lambda_real = lambda_real.contiguous()
-        lambda_imag = lambda_imag.contiguous()
+        lambda_real = lambda_real.to(x_real.dtype).contiguous()
+        lambda_imag = lambda_imag.to(x_real.dtype).contiguous()
+
         output_real, output_imag = hgru_cuda.forward(
             x_real, x_imag, lambda_real, lambda_imag
         )
