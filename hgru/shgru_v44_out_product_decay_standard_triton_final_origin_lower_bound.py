@@ -58,6 +58,8 @@ class SHgruV44(nn.Module):
         F_ = F.sigmoid(F_)
         if type(lower_bound) == int:
             lower_bound = torch.zeros_like(x).to(x)
+        elif lower_bound is None:
+            lower_bound = torch.zeros_like(x).to(x)
 
         # reshape
         # h is num_head, d is head dimension
